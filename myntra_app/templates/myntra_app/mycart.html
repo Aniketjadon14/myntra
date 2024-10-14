@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mycart</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.2/font/bootstrap-icons.css">
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+
+<body onload="update_cart()">
+    {% include 'myntra_app/navbar.html' %}
+    <div class="container-fluid text-center">
+        <h1>Your cart</h1>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <div class="container col-sm-8">
+                <div class="row align-items-start" id="row">
+                </div>
+            </div>
+            <div class="container col-sm-4 float-start" id="card">
+                <div class="card float-start" style="width: 28rem;">
+                    <div class="card-body">
+                        <h3 class="card-title">Grand Total</h3>
+                        <h4 class="card-text" id="total"></h4>
+                    </div>
+
+                    <button type="submit" name="checkout-button" class="btn btn-lg btn-primary" id="checkout-button">Checkout</button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include 'myntra_app/footer.html' %}
+
+    <script>
+        var obj = localStorage.getItem("cart_item")
+        if (obj === null) {
+            document.getElementById("card").style.visibility = "hidden"
+        } else {
+            document.getElementById("card").style.visibility = "visible"
+            var z = JSON.parse(obj)
+            var title = []
+            var price = []
+            var image = []
+            var total = []
+            var grandtotal = 0
+            for (var i = 0; i < z.length; i++) {
+                title[i] = z[i]['title']
+                price[i] = z[i]['price']
+                image[i] = z[i]['image']
+                total[i] = parseInt(price[i]) * z[i]['count']
+                var element =
+                    `<div class="card mb-3" style="width: 50rem;padding: 0%;">
+          <div class="row g-0">
+            <div class="col-md-4">
+            <img src=` + image[i] + ` style="width: 100%;height: 200px;object-fit: fill; padding:0;">
+            </div>
+          <div class="col-md-6">
+            <div class="card-body">
+              <h5 class="card-title">` + title[i] + `</h5>
+              <p class="card-text">INR ` + price[i] + `</p>
+              <div class="btn-group" role="group" aria-label="Basic example">
+                <button type="button" class="btn btn-warning" 
+                value=` + z[i]['i'] + ` onclick=remove_item(value)>-</button>
+                <input type="text" class="form-control" id="qty" readonly="true" style="width:75px;" value=` + z[i]['count'] + `>
+                <button type="button" class="btn btn-primary" 
+                value=` + z[i]['i'] + ` onclick=additem(value)>Add</button>
+              </div><br><br>
+              <button type="button" class="btn btn-danger" value=` + z[i]['i'] + `
+              onclick="remove(value)">Remove</button>
+            </div>
+          </div>
+          <div class="col-sm-2">
+            <div class="card-body">
+              <h5 class="card-title">Total</h5>
+              <p class="card-text">INR ` + total[i] + `</p>
+          </div>
+        </div>
+      </div>`
+                grandtotal += total[i]
+                document.getElementById('row').innerHTML += element
+            }
+            if (grandtotal === 0) {
+                document.getElementById("card").style.visibility = "hidden"
+            } else {
+                document.getElementById("card").style.visibility = "visible"
+            }
+            document.getElementById('total').innerText = `INR ` + grandtotal
+            console.log(title)
+            console.log(price)
+            console.log(image)
+        }
+
+        function additem(i) {
+            console.log("increment")
+            var obj = localStorage.getItem("cart_item")
+            var z = JSON.parse(obj)
+            for (var m = 0; m < z.length; m++) {
+                n = z[m]['i']
+                r = z[m]['count']
+                if (i === n) {
+                    r = r + 1
+                    z[m]['count'] = r
+                    z = JSON.stringify(z)
+                    localStorage.setItem("cart_item", z)
+                    location.reload()
+                }
+            }
+        }
+
+        function remove_item(i) {
+            console.log("increment")
+            var obj = localStorage.getItem("cart_item")
+            var z = JSON.parse(obj)
+            for (var m = 0; m < z.length; m++) {
+                n = z[m]['i']
+                r = z[m]['count']
+                if (i === n) {
+                    r = r - 1
+                    if (r === 0) {
+                        z.splice(m, 1)
+                        z = JSON.stringify(z)
+                        localStorage.setItem("cart_item", z)
+                        location.reload()
+                    } else {
+                        z[m]['count'] = r
+                        z = JSON.stringify(z)
+                        localStorage.setItem("cart_item", z)
+                        location.reload()
+                    }
+
+                }
+            }
+        }
+
+        function remove(i) {
+            console.log(i)
+            var obj = localStorage.getItem("cart_item")
+            var z = JSON.parse(obj)
+            console.log(z)
+            for (var m = 0; m < z.length; m++) {
+                n = z[m]['i']
+                if (i === n) {
+                    z.splice(m, 1)
+                    console.log(z)
+                    z = JSON.stringify(z)
+                    localStorage.setItem("cart_item", z)
+                    location.reload()
+                }
+            }
+        }
+
+        function update_cart() {
+            var obj = localStorage.getItem("cart_item")
+            if (obj === null) {
+                var r = 0
+            } else {
+                var z = JSON.parse(obj)
+                var r = 0
+                for (var m = 0; m < z.length; m++) {
+                    // console.log(z[m]["i"])
+                    var n = z[m]["i"]
+                    r += z[m]["count"]
+                }
+            }
+            r = r.toString()
+
+            document.getElementById("item_count").innerHTML = r
+        }
+        document.getElementById('checkout-button').value = grandtotal
+        console.log(document.getElementById('checkout-button').value)
+        var stripe = Stripe('pk_test_51MhTROSDXnkGBpVS5fXHjbKQtKQXfD8c0uSVCDVtdafrxkJe3ccSlKODtnVv2ovnxAZu09CmfzRWi5o0PEGNTJ8c00ZTEFUhX7');
+        var checkoutButton = document.getElementById('checkout-button');
+        console.log("mansi")
+        checkoutButton.addEventListener('click', function() {
+            // Create a new Checkout Session using the server-side endpoint you
+            // created in step 3.
+            fetch('/create-checkout-session/', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        'post_data': grandtotal
+                    })
+                })
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(session) {
+                    return stripe.redirectToCheckout({
+                        sessionId: session.id
+                    });
+                })
+                .then(function(result) {
+                    // If `redirectToCheckout` fails due to a browser or network
+                    // error, you should display the localized error message to your
+                    // customer using `error.message`.
+                    if (result.error) {
+                        alert(result.error.message);
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error:', error);
+                });
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+
+</body>
+
+</html>
